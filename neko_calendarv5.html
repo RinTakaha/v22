@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="にゃんこ">
+<meta name="theme-color" content="#c97b4b">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>にゃんこカレンダー</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--color-background-primary:#ffffff;--color-background-secondary:#f5f5f5;--color-background-tertiary:#eeeeee;--color-text-primary:#111111;--color-text-secondary:#555555;--color-text-tertiary:#999999;--color-border-tertiary:rgba(0,0,0,0.1);--color-border-secondary:rgba(0,0,0,0.2);--border-radius-md:8px;--border-radius-lg:12px;--font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--neko-primary:#c97b4b;--neko-accent:#8b5e3c;}
+@media(prefers-color-scheme:dark){:root{--color-background-primary:#1a1a1a;--color-background-secondary:#2a2a2a;--color-background-tertiary:#333333;--color-text-primary:#f0f0f0;--color-text-secondary:#aaaaaa;--color-text-tertiary:#666666;--color-border-tertiary:rgba(255,255,255,0.1);--color-border-secondary:rgba(255,255,255,0.2);}}
+body{font-family:var(--font-sans);background:var(--color-background-tertiary);color:var(--color-text-primary);min-height:100vh;}
+#app{max-width:480px;margin:0 auto;padding:.75rem .75rem 3rem;}
+#loader{width:100%;min-height:320px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.book-wrap{position:relative;width:160px;height:200px;perspective:600px;}
+.page{position:absolute;top:0;left:0;width:160px;height:200px;border-radius:4px 10px 10px 4px;transform-origin:left center;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;}
+.p1{background:#f5e6d0;z-index:5;}.p2{background:#e8f4e8;z-index:4;}.p3{background:#e8e8f4;z-index:3;}.p4{background:#f4e8e8;z-index:2;}.p5{background:#fff8e8;z-index:1;}
+.pline{width:100px;height:1px;background:rgba(0,0,0,0.1);}.pline.s{width:70px;}
+.loader-title{margin-top:18px;font-size:15px;font-weight:500;color:var(--color-text-primary);}
+.loader-sub{font-size:12px;color:var(--color-text-secondary);margin-top:4px;}
+#main-app{display:none;padding:.75rem 0;}
+.header{display:flex;flex-direction:column;gap:8px;margin-bottom:.75rem;}
+.hrow1{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.hrow2{display:flex;gap:4px;justify-content:flex-end;align-items:center;}
+.nav-group{display:flex;align-items:center;gap:4px;}
+.nbtn{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 12px;cursor:pointer;font-size:14px;color:var(--color-text-primary);min-height:36px;touch-action:manipulation;}
+.nbtn:hover{background:var(--color-background-secondary);}
+.mtitle{font-size:17px;font-weight:500;color:var(--color-text-primary);text-align:center;flex:1;}
+.tbtn{border:2px solid transparent;border-radius:20px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:500;min-height:32px;background:var(--color-background-secondary);color:var(--color-text-primary);touch-action:manipulation;}
+.tbtn.active{border-color:var(--neko-accent);}
+.hbtn{width:32px;height:32px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);touch-action:manipulation;flex-shrink:0;}
+.neko-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;margin-bottom:.75rem;display:flex;align-items:center;gap:10px;background:var(--color-background-primary);}
+.neko-quote strong{color:var(--color-text-primary);font-weight:500;display:block;font-size:13px;margin-bottom:2px;}
+.neko-quote span{font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+.calendar{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary);}
+.wdays{display:grid;grid-template-columns:repeat(7,1fr);background:var(--color-background-secondary);}
+.wday{text-align:center;padding:6px 2px;font-size:11px;font-weight:500;color:var(--color-text-secondary);}
+.days{display:grid;grid-template-columns:repeat(7,1fr);}
+.day{border-top:0.5px solid var(--color-border-tertiary);padding:4px 2px 20px;min-height:48px;cursor:pointer;position:relative;touch-action:manipulation;}
+.day:active{background:var(--color-background-secondary);}
+.day.om .dn{color:var(--color-text-tertiary);}
+.dn{font-size:12px;text-align:center;color:var(--color-text-primary);}
+.dn.sun{color:#e05a4b;}.dn.sat{color:#4a7fc1;}
+.paw{position:absolute;bottom:2px;right:2px;font-size:14px;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.4) rotate(-20deg);pointer-events:none;}
+.paw.show{opacity:1;transform:scale(1) rotate(0deg);}
+.day.he::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--neko-primary);}
+.day.po::after{display:none;}
+.dnd{position:absolute;bottom:3px;left:4px;right:4px;font-size:9px;color:var(--color-text-secondary);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.legend{display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--color-text-secondary);flex-wrap:wrap;}
+.tabs{display:flex;margin-top:1rem;margin-bottom:.75rem;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;}
+.tabt{flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;font-size:12px;color:var(--color-text-secondary);min-height:44px;border-right:0.5px solid var(--color-border-secondary);touch-action:manipulation;}
+.tabt:last-child{border-right:none;}
+.tabt.active{background:var(--neko-primary);color:white;}
+.panel{display:none;}.panel.vis{display:block;}
+.cbox{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);background:var(--color-background-primary);padding:.875rem 1rem;margin-bottom:.75rem;}
+.cbox-t{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;}
+.arow{display:flex;gap:6px;margin-bottom:10px;}
+.arow input,.tnrow input{flex:1;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:14px;color:var(--color-text-primary);background:var(--color-background-secondary);min-height:40px;}
+.abtn{padding:8px 12px;border-radius:var(--border-radius-md);border:none;background:var(--neko-primary);color:white;cursor:pointer;font-size:14px;min-height:40px;min-width:52px;touch-action:manipulation;}
+.tsr{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.tsr select{flex:1;min-width:0;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px;font-size:13px;color:var(--color-text-primary);background:var(--color-background-secondary);min-height:40px;}
+.smbtn{padding:8px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;font-size:13px;color:var(--color-text-primary);min-height:40px;touch-action:manipulation;white-space:nowrap;}
+.ci{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.ci:last-child{border-bottom:none;}
+.ci input[type=checkbox]{width:20px;height:20px;accent-color:var(--neko-primary);cursor:pointer;flex-shrink:0;}
+.ci label{flex:1;font-size:14px;color:var(--color-text-primary);cursor:pointer;line-height:1.4;}
+.ci label.done{text-decoration:line-through;color:var(--color-text-tertiary);}
+.dbtn{background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:6px;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+.prog-lbl{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;}
+.prog-w{height:6px;background:var(--color-background-secondary);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+.prog-b{height:100%;background:var(--neko-primary);border-radius:3px;transition:width .3s;}
+.empty{font-size:13px;color:var(--color-text-tertiary);padding:12px 0;text-align:center;}
+.tir{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.tir:last-child{border-bottom:none;}
+.tir span{flex:1;font-size:14px;color:var(--color-text-primary);}
+.tnrow{display:flex;gap:6px;margin-bottom:10px;}
+.stbtn{padding:8px 12px;border-radius:var(--border-radius-md);border:none;background:var(--neko-accent);color:white;cursor:pointer;font-size:14px;min-height:40px;touch-action:manipulation;}
+.str{border-bottom:0.5px solid var(--color-border-tertiary);padding:8px 0;}
+.str:last-child{border-bottom:none;}
+.strt{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.strn{font-size:14px;font-weight:500;color:var(--color-text-primary);flex:1;}
+.stri{font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center;padding:0 12px;}
+.ov.open{display:flex;}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:1.125rem;width:100%;max-width:420px;border:0.5px solid var(--color-border-secondary);max-height:90vh;overflow-y:auto;}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:10px;color:var(--color-text-primary);}
+.modal textarea{width:100%;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px;font-size:14px;font-family:var(--font-sans);color:var(--color-text-primary);background:var(--color-background-secondary);resize:none;height:70px;display:block;margin-bottom:8px;}
+.mchk{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px;color:var(--color-text-secondary);cursor:pointer;}
+.mchk input{width:18px;height:18px;accent-color:var(--neko-primary);}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;}
+.mbtns button{padding:9px 16px;border-radius:var(--border-radius-md);font-size:14px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-primary);min-height:40px;touch-action:manipulation;}
+.mbtns .sv{background:var(--neko-primary);color:white;border-color:var(--neko-primary);}
+.etpl-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;}
+.etpl-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.etpl-chip{padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:13px;color:var(--color-text-primary);cursor:pointer;touch-action:manipulation;}
+.etpl-chip:active{opacity:0.7;}
+.hov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:flex-start;justify-content:center;padding:12px;}
+.hov.open{display:flex;}
+.hmodal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:1.125rem;width:100%;max-width:420px;border:0.5px solid var(--color-border-secondary);max-height:90vh;overflow-y:auto;}
+.hmhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.hmhd h3{font-size:15px;font-weight:500;color:var(--color-text-primary);}
+.hi{display:flex;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary);align-items:flex-start;}
+.hi:last-child{border-bottom:none;}
+.hic{font-size:20px;line-height:1;flex-shrink:0;margin-top:2px;}
+.hit strong{display:block;font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px;}
+.hit span{font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+.pwa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:var(--border-radius-md);border:none;background:var(--neko-primary);color:white;font-size:14px;font-weight:500;cursor:pointer;touch-action:manipulation;margin-top:4px;}
+.pwa-btn:active{opacity:0.85;}
+.pwa-btn.hidden{display:none;}
+.pwa-ios{display:none;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-secondary);line-height:1.7;margin-top:4px;}
+.pwa-ios.show{display:block;}
+.pwa-ios strong{color:var(--color-text-primary);}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="loader">
+  <div class="book-wrap">
+    <div class="page p5"><div style="font-size:26px">📅</div><div class="pline"></div><div class="pline s"></div></div>
+    <div class="page p4"><div style="font-size:26px">🗓️</div><div class="pline"></div><div class="pline s"></div></div>
+    <div class="page p3"><div style="font-size:26px">📝</div><div class="pline"></div><div class="pline"></div><div class="pline s"></div></div>
+    <div class="page p2"><div style="font-size:26px">✅</div><div class="pline s"></div><div class="pline"></div></div>
+    <div class="page p1"><div style="font-size:26px">🐱</div><div class="pline"></div><div class="pline s"></div><div style="font-size:11px;color:#c97b4b;font-weight:500;margin-top:4px;">にゃんこカレンダー</div></div>
+  </div>
+  <div class="loader-title">にゃんこカレンダー</div>
+  <div class="loader-sub" id="lsub">ページをめくっています...</div>
+</div>
+
+<div id="main-app">
+  <div class="header">
+    <div class="hrow1">
+      <div class="nav-group">
+        <button class="nbtn" id="prev-btn">◀</button>
+        <button class="nbtn" id="today-btn" style="font-size:12px;padding:8px 8px;">今日</button>
+        <button class="nbtn" id="next-btn">▶</button>
+      </div>
+      <div class="mtitle" id="mtitle"></div>
+    </div>
+    <div class="hrow2">
+      <button class="tbtn" id="t-mike" onclick="setTheme('mike')">三毛猫</button>
+      <button class="tbtn" id="t-kuro" onclick="setTheme('kuro')">黒猫</button>
+      <button class="tbtn" id="t-siam" onclick="setTheme('siam')">シャム猫</button>
+      <button class="hbtn" onclick="openHelp()" aria-label="使い方"><i class="ti ti-help"></i></button>
+    </div>
+  </div>
+
+  <div class="neko-card" id="neko-card">
+    <div id="neko-img" style="font-size:32px;line-height:1;flex-shrink:0;">🐱</div>
+    <div class="neko-quote"><strong id="neko-title"></strong><span id="neko-text"></span></div>
+  </div>
+
+  <div class="calendar">
+    <div class="wdays">
+      <div class="wday" style="color:#e05a4b">日</div>
+      <div class="wday">月</div><div class="wday">火</div><div class="wday">水</div>
+      <div class="wday">木</div><div class="wday">金</div>
+      <div class="wday" style="color:#4a7fc1">土</div>
+    </div>
+    <div class="days" id="days-grid"></div>
+  </div>
+  <div class="legend"><span>🐾 完了</span><span>● 予定あり</span><span style="color:var(--color-text-tertiary)">日付タップで予定入力</span></div>
+
+  <div class="tabs">
+    <button class="tabt active" id="tab-checklist" onclick="showTab('checklist')">持ち物</button>
+    <button class="tabt" id="tab-template" onclick="showTab('template')">持ち物テンプレ</button>
+    <button class="tabt" id="tab-etpl" onclick="showTab('etpl')">予定テンプレ</button>
+  </div>
+
+  <div class="panel vis" id="panel-checklist">
+    <div class="cbox">
+      <div class="cbox-t">持ち物リスト</div>
+      <div class="tsr">
+        <select id="tpl-select"><option value="">テンプレートを読み込む...</option></select>
+        <button class="smbtn" onclick="applyTemplate()">適用</button>
+        <button class="smbtn" onclick="clearChecklist()">全削除</button>
+      </div>
+      <div class="arow">
+        <input id="new-item-input" placeholder="持ち物を追加..." onkeydown="if(event.key==='Enter')addItem()">
+        <button class="abtn" onclick="addItem()"><i class="ti ti-plus"></i></button>
+      </div>
+      <div class="prog-lbl" id="prog-lbl">0 / 0 完了</div>
+      <div class="prog-w"><div class="prog-b" id="prog-b" style="width:0%"></div></div>
+      <div id="checklist-items"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-template">
+    <div class="cbox">
+      <div class="cbox-t">テンプレートを作成・編集</div>
+      <div class="tnrow">
+        <input id="tpl-name-input" placeholder="テンプレート名（例：旅行の持ち物）">
+        <button class="stbtn" onclick="saveTemplate()">保存</button>
+      </div>
+      <div class="arow">
+        <input id="tpl-item-input" placeholder="アイテムを追加..." onkeydown="if(event.key==='Enter')addTplItem()">
+        <button class="abtn" onclick="addTplItem()"><i class="ti ti-plus"></i></button>
+      </div>
+      <div id="tpl-items-preview"></div>
+    </div>
+    <div class="cbox">
+      <div class="cbox-t">保存済みテンプレート</div>
+      <div id="saved-tpls"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-etpl">
+    <div class="cbox">
+      <div class="cbox-t">予定テンプレートを追加</div>
+      <div class="arow">
+        <input id="etpl-input" placeholder="例：病院、会議、歯医者..." onkeydown="if(event.key==='Enter')addEtpl()">
+        <button class="abtn" onclick="addEtpl()"><i class="ti ti-plus"></i></button>
+      </div>
+      <div class="cbox-t" style="margin-top:4px;">登録済みの予定テンプレート</div>
+      <div id="etpl-list"></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--color-text-tertiary);">日付をタップしたときにボタンとして表示されます</div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="day-ov">
+  <div class="modal">
+    <h3 id="modal-dt"></h3>
+    <div class="etpl-label">よく使う予定</div>
+    <div class="etpl-chips" id="etpl-chips"></div>
+    <textarea id="modal-note" placeholder="予定・メモを入力..."></textarea>
+    <label class="mchk"><input type="checkbox" id="modal-done"> タスク完了（🐾スタンプ）</label>
+    <div class="mbtns">
+      <button onclick="closeModal()">キャンセル</button>
+      <button class="sv" onclick="saveDay()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="hov" id="help-ov">
+  <div class="hmodal">
+    <div class="hmhd">
+      <h3>🐱 にゃんこカレンダーの使い方</h3>
+      <button class="dbtn" onclick="closeHelp()" aria-label="閉じる"><i class="ti ti-x" style="font-size:18px"></i></button>
+    </div>
+    <div class="hi"><div class="hic">📅</div><div class="hit"><strong>カレンダー</strong><span>日付をタップすると予定・メモを入力できます。◀▶で月を移動、「今日」で今月に戻れます。</span></div></div>
+    <div class="hi"><div class="hic">⚡</div><div class="hit"><strong>予定テンプレート</strong><span>「予定テンプレ」タブで登録した文言が、日付モーダルにボタンとして表示されます。</span></div></div>
+    <div class="hi"><div class="hic">🐾</div><div class="hit"><strong>肉球スタンプ</strong><span>「タスク完了」にチェックを入れると、その日に🐾スタンプが押されます。</span></div></div>
+    <div class="hi"><div class="hic">🐱</div><div class="hit"><strong>日めくり猫格言</strong><span>今日の日付に合わせて毎日違う猫の格言が表示されます。</span></div></div>
+    <div class="hi"><div class="hic">🎨</div><div class="hit"><strong>きせかえテーマ</strong><span>「三毛猫」「黒猫」「シャム猫」で配色を変えられます。設定は保存されます。</span></div></div>
+    <div class="hi"><div class="hic">🧳</div><div class="hit"><strong>持ち物リスト＆テンプレート</strong><span>持ち物をチェック管理できます。テンプレートに保存して次回もすぐ使えます。</span></div></div>
+    <div class="hi"><div class="hic">💾</div><div class="hit"><strong>自動保存</strong><span>予定・持ち物・テーマはすべてブラウザに自動保存。ページを閉じても消えません。</span></div></div>
+
+    <div style="border-top:0.5px solid var(--color-border-tertiary);margin-top:4px;padding-top:12px;">
+      <div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px;">📲 ホーム画面に追加する</div>
+      <button class="pwa-btn" id="pwa-install-btn" onclick="triggerInstall()">
+        <i class="ti ti-device-mobile-plus"></i> ホーム画面に追加はこちらから
+      </button>
+      <div class="pwa-ios" id="pwa-ios-guide">
+        Safariで開いている場合は：<br>
+        <strong>① 画面下の「共有」ボタン（四角に矢印）をタップ</strong><br>
+        <strong>② 「ホーム画面に追加」を選択</strong><br>
+        <strong>③「追加」をタップして完了！</strong>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="closeHelp()" style="width:100%;padding:10px;border-radius:var(--border-radius-md);border:none;background:var(--neko-primary);color:white;font-size:14px;cursor:pointer;touch-action:manipulation;">とじる</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const THEMES={mike:{primary:'#c97b4b',accent:'#8b5e3c',todayBg:'#f5e6d0',todayColor:'#8b5e3c',cat:'🐱'},kuro:{primary:'#3a3a4a',accent:'#1a1a2e',todayBg:'#e8e8f0',todayColor:'#1a1a2e',cat:'🐈‍⬛'},siam:{primary:'#a67c52',accent:'#6b4c2a',todayBg:'#f0e6d2',todayColor:'#6b4c2a',cat:'😸'}};
+const QUOTES=[{t:'今日の猫格言',q:'今日はのんびりする日ニャ。急いでも、いいことないニャよ。'},{t:'今日の猫格言',q:'ご飯の前に座っておくと、だいたいもらえるニャ。'},{t:'今日の猫格言',q:'高いところからみんなを見守るのが仕事ニャ。'},{t:'今日の猫格言',q:'昼寝は1日3回以上が基本ニャ。健康の秘訣ニャよ。'},{t:'今日の猫格言',q:'箱を見たら入る。これ、猫の鉄則ニャ。'},{t:'今日の猫格言',q:'窓の外を見ていれば、何かいいことが起きるかもニャ。'},{t:'今日の猫格言',q:'キーボードの上は最高の特等席ニャよ。'},{t:'今日の猫格言',q:'もふもふしたものがあれば、とにかくくっつくニャ。'},{t:'今日の猫格言',q:'朝日が差し込む場所が、今日の最高の居場所ニャ。'},{t:'今日の猫格言',q:'落としてみると何が起きるか分かる。試してみるニャ。'},{t:'今日の猫格言',q:'撫でてほしいときは鳴く。シンプルが一番ニャ。'},{t:'今日の猫格言',q:'気が向いたときだけ甘えるのが、猫らしさニャ。'}];
+const MONTH_Q=[{t:'今月の猫のひとこと',q:'春の風がほっぺをなでていくニャ。'},{t:'今月の猫のひとこと',q:'雨粒が窓を流れるのをずっと眺めていられるニャ。'},{t:'今月の猫のひとこと',q:'じめじめするけど、ひんやりした床が最高ニャよ。'},{t:'今月の猫のひとこと',q:'夏の夜風、最高にキモチいいニャ！'},{t:'今月の猫のひとこと',q:'蝉の声も慣れたら子守唄ニャ。うとうと…zzz'},{t:'今月の猫のひとこと',q:'台風の日はひざの上が定位置ニャ。'},{t:'今月の猫のひとこと',q:'秋の日差しがやわらかくて窓際が最高ニャ。'},{t:'今月の猫のひとこと',q:'夜が長い…でも毛布がふかふかで幸せニャ。'},{t:'今月の猫のひとこと',q:'落ち葉がカサカサするの、ちょっと気になるニャ。'},{t:'今月の猫のひとこと',q:'寒くなってきたニャ。ひざの上の取り合いが始まるニャよ。'},{t:'今月の猫のひとこと',q:'鍋の湯気があったかいニャ。今夜も鍋？ニャ？'},{t:'今月の猫のひとこと',q:'年の瀬も関係ないニャ。猫にとって毎日が特別ニャよ。'}];
+const DEF_TPLS=[{name:'旅行の持ち物',items:['パスポート／身分証','財布・現金・カード','スマートフォン・充電器','着替え','洗面用具','常備薬','カメラ','傘・レインウェア','エコバッグ']},{name:'仕事・学校',items:['PC・タブレット','充電ケーブル','ノート・筆記用具','名刺入れ','お弁当・水筒','ハンカチ・ティッシュ','交通系ICカード']},{name:'日帰り外出',items:['財布','スマートフォン','交通系ICカード','ハンカチ・ティッシュ','マスク','鍵','モバイルバッテリー']}];
+const DEF_ETPLS=['病院','歯医者','会議','打ち合わせ','買い物','美容院','学校行事','在宅勤務'];
+
+let now=new Date(),vY=now.getFullYear(),vM=now.getMonth();
+let theme='mike',calData={},checks=[],tpls=[],draft=[],etpls=[],modalKey=null;
+let deferredPrompt=null;
+
+function ls(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+function loadAll(){calData=ls('nkc5_cal')||{};checks=ls('nkc5_checks')||[];tpls=ls('nkc5_tpls');if(!tpls||!tpls.length)tpls=JSON.parse(JSON.stringify(DEF_TPLS));etpls=ls('nkc5_etpls');if(!etpls||!etpls.length)etpls=[...DEF_ETPLS];const t=ls('nkc5_theme');if(t&&THEMES[t])theme=t;}
+function saveAll(){ls('nkc5_cal',calData);ls('nkc5_checks',checks);ls('nkc5_tpls',tpls);ls('nkc5_etpls',etpls);ls('nkc5_theme',theme);}
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  const btn=document.getElementById('pwa-install-btn');
+  if(btn)btn.classList.remove('hidden');
+  document.getElementById('pwa-ios-guide').classList.remove('show');
+});
+window.addEventListener('appinstalled',()=>{
+  deferredPrompt=null;
+  const btn=document.getElementById('pwa-install-btn');
+  if(btn){btn.textContent='✅ ホーム画面に追加済み！';btn.disabled=true;}
+});
+
+function triggerInstall(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.navigator.standalone;
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{deferredPrompt=null;});
+  } else if(isIOS){
+    document.getElementById('pwa-ios-guide').classList.toggle('show');
+  } else {
+    document.getElementById('pwa-ios-guide').classList.toggle('show');
+  }
+}
+
+function initPwaBtn(){
+  const btn=document.getElementById('pwa-install-btn');
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.navigator.standalone;
+  const isStandalone=window.navigator.standalone||window.matchMedia('(display-mode: standalone)').matches;
+  if(isStandalone){btn.textContent='✅ ホーム画面に追加済み！';btn.disabled=true;}
+  else if(isIOS){btn.classList.remove('hidden');}
+  else{btn.classList.remove('hidden');}
+}
+
+function applyTheme(t){
+  const th=THEMES[t];
+  document.documentElement.style.setProperty('--neko-primary',th.primary);
+  document.documentElement.style.setProperty('--neko-accent',th.accent);
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById({mike:'t-mike',kuro:'t-kuro',siam:'t-siam'}[t]).classList.add('active');
+  document.getElementById('neko-card').style.borderLeft='3px solid '+th.primary;
+  document.getElementById('neko-img').textContent=th.cat;
+  document.querySelectorAll('.abtn,.stbtn').forEach(b=>b.style.background=th.primary);
+  document.querySelectorAll('.tabt.active').forEach(b=>b.style.background=th.primary);
+  document.getElementById('pwa-install-btn').style.background=th.primary;
+}
+function setTheme(t){theme=t;applyTheme(t);saveAll();renderCalendar();}
+function renderNeko(){const isNow=(vY===now.getFullYear()&&vM===now.getMonth());const q=isNow?QUOTES[(now.getDate()+vM*3)%QUOTES.length]:MONTH_Q[vM%12];document.getElementById('neko-title').textContent=q.t;document.getElementById('neko-text').textContent=q.q;}
+function mk(tag,cls){const el=document.createElement(tag);if(cls)el.className=cls;return el;}
+
+function renderCalendar(){
+  document.getElementById('mtitle').textContent=vY+'年'+(vM+1)+'月';
+  const grid=document.getElementById('days-grid');grid.innerHTML='';
+  const fd=new Date(vY,vM,1).getDay(),dim=new Date(vY,vM+1,0).getDate(),dip=new Date(vY,vM,0).getDate();
+  const th=THEMES[theme];
+  for(let i=0;i<fd;i++){const c=mk('div','day om');const n=mk('div','dn');n.textContent=dip-fd+1+i;c.appendChild(n);grid.appendChild(c);}
+  for(let d=1;d<=dim;d++){
+    const dk=vY+'-'+String(vM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dow=(fd+d-1)%7,isT=(d===now.getDate()&&vM===now.getMonth()&&vY===now.getFullYear());
+    const dd=calData[dk]||{};
+    const cell=mk('div','day'+(isT?' today':'')+(dd.note?' he':'')+(dd.done?' po':''));
+    const num=mk('div','dn'+(dow===0?' sun':dow===6?' sat':''));
+    num.textContent=d;
+    if(isT)num.style.cssText='background:'+th.todayBg+';color:'+th.todayColor+';width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:500;margin:0 auto;font-size:12px;';
+    const paw=mk('div','paw'+(dd.done?' show':''));paw.textContent='🐾';
+    cell.append(num,paw);
+    if(dd.note){const nt=mk('div','dnd');nt.textContent=dd.note;cell.appendChild(nt);}
+    cell.addEventListener('click',()=>openModal(dk,d));
+    grid.appendChild(cell);
+  }
+  const rem=(7-((fd+dim)%7))%7;
+  for(let i=1;i<=rem;i++){const c=mk('div','day om');const n=mk('div','dn');n.textContent=i;c.appendChild(n);grid.appendChild(c);}
+  renderNeko();
+}
+
+function renderEtplChips(){
+  const el=document.getElementById('etpl-chips');el.innerHTML='';
+  if(!etpls.length){el.innerHTML='<span style="font-size:12px;color:var(--color-text-tertiary);">「予定テンプレ」タブで登録してください</span>';return;}
+  etpls.forEach(txt=>{const btn=mk('button','etpl-chip');btn.textContent=txt;btn.onclick=()=>{const ta=document.getElementById('modal-note');ta.value=ta.value?ta.value+'\n'+txt:txt;};el.appendChild(btn);});
+}
+function openModal(dk,d){modalKey=dk;const dd=calData[dk]||{};document.getElementById('modal-dt').textContent=vY+'年'+(vM+1)+'月'+d+'日';document.getElementById('modal-note').value=dd.note||'';document.getElementById('modal-done').checked=!!dd.done;renderEtplChips();document.getElementById('day-ov').classList.add('open');}
+function closeModal(){document.getElementById('day-ov').classList.remove('open');modalKey=null;}
+function saveDay(){if(!modalKey)return;const note=document.getElementById('modal-note').value.trim();const done=document.getElementById('modal-done').checked;if(note||done)calData[modalKey]={note,done};else delete calData[modalKey];saveAll();closeModal();renderCalendar();}
+function openHelp(){document.getElementById('help-ov').classList.add('open');}
+function closeHelp(){document.getElementById('help-ov').classList.remove('open');}
+
+function showTab(tab){
+  document.querySelectorAll('.tabt').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';});
+  const btn=document.getElementById('tab-'+tab);btn.classList.add('active');btn.style.background=THEMES[theme].primary;btn.style.color='white';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('vis'));
+  document.getElementById('panel-'+tab).classList.add('vis');
+  if(tab==='checklist')renderChecklist();
+  if(tab==='template'){renderDraft();renderSaved();updateSelect();}
+  if(tab==='etpl')renderEtplList();
+}
+function addEtpl(){const inp=document.getElementById('etpl-input');const v=inp.value.trim();if(!v)return;if(etpls.includes(v)){inp.value='';return;}etpls.push(v);inp.value='';saveAll();renderEtplList();}
+function renderEtplList(){
+  const el=document.getElementById('etpl-list');
+  if(!etpls.length){el.innerHTML='<div class="empty">テンプレートがまだありません</div>';return;}
+  el.innerHTML='';
+  etpls.forEach((txt,i)=>{const row=mk('div','tir');const sp=mk('span');sp.textContent=txt;const del=mk('button','dbtn');del.setAttribute('aria-label','削除');del.innerHTML='<i class="ti ti-x"></i>';del.onclick=()=>{etpls.splice(i,1);saveAll();renderEtplList();};row.append(sp,del);el.appendChild(row);});
+}
+function renderChecklist(){
+  const el=document.getElementById('checklist-items');
+  if(!checks.length){el.innerHTML='<div class="empty">アイテムを追加するか、テンプレートを適用してください</div>';updateProg();return;}
+  el.innerHTML='';
+  checks.forEach((item,i)=>{const row=mk('div','ci');const cb=mk('input');cb.type='checkbox';cb.checked=item.done;cb.id='ci'+i;cb.onchange=()=>{checks[i].done=cb.checked;saveAll();renderChecklist();};const lbl=mk('label');lbl.htmlFor='ci'+i;lbl.textContent=item.text;if(item.done)lbl.classList.add('done');const del=mk('button','dbtn');del.setAttribute('aria-label','削除');del.innerHTML='<i class="ti ti-x"></i>';del.onclick=()=>{checks.splice(i,1);saveAll();renderChecklist();};row.append(cb,lbl,del);el.appendChild(row);});
+  updateProg();
+}
+function updateProg(){const tot=checks.length,done=checks.filter(x=>x.done).length;document.getElementById('prog-lbl').textContent=done+' / '+tot+' 完了';document.getElementById('prog-b').style.width=(tot?Math.round(done/tot*100):0)+'%';}
+function addItem(){const inp=document.getElementById('new-item-input');const v=inp.value.trim();if(!v)return;checks.push({text:v,done:false});inp.value='';saveAll();renderChecklist();}
+function clearChecklist(){if(!checks.length)return;if(!confirm('持ち物リストを全削除しますか？'))return;checks=[];saveAll();renderChecklist();}
+function applyTemplate(){const sel=document.getElementById('tpl-select');const idx=parseInt(sel.value);if(isNaN(idx))return;tpls[idx].items.forEach(t=>{if(!checks.find(x=>x.text===t))checks.push({text:t,done:false});});saveAll();renderChecklist();showTab('checklist');}
+function updateSelect(){const sel=document.getElementById('tpl-select');sel.innerHTML='<option value="">テンプレートを読み込む...</option>';tpls.forEach((t,i)=>{const o=mk('option');o.value=i;o.textContent=t.name;sel.appendChild(o);});}
+function addTplItem(){const inp=document.getElementById('tpl-item-input');const v=inp.value.trim();if(!v)return;draft.push(v);inp.value='';renderDraft();}
+function renderDraft(){const el=document.getElementById('tpl-items-preview');if(!draft.length){el.innerHTML='<div class="empty">アイテムを追加してテンプレートを作成...</div>';return;}el.innerHTML='';draft.forEach((item,i)=>{const row=mk('div','tir');const sp=mk('span');sp.textContent=item;const del=mk('button','dbtn');del.setAttribute('aria-label','削除');del.innerHTML='<i class="ti ti-x"></i>';del.onclick=()=>{draft.splice(i,1);renderDraft();};row.append(sp,del);el.appendChild(row);});}
+function saveTemplate(){const name=document.getElementById('tpl-name-input').value.trim();if(!name){alert('テンプレート名を入力してください');return;}if(!draft.length){alert('アイテムを1つ以上追加してください');return;}const ei=tpls.findIndex(t=>t.name===name);if(ei>=0)tpls[ei]={name,items:[...draft]};else tpls.push({name,items:[...draft]});draft=[];document.getElementById('tpl-name-input').value='';saveAll();renderDraft();renderSaved();updateSelect();}
+function renderSaved(){
+  const el=document.getElementById('saved-tpls');if(!tpls.length){el.innerHTML='<div class="empty">保存済みテンプレートなし</div>';return;}el.innerHTML='';
+  tpls.forEach((tpl,i)=>{const row=mk('div','str');const top=mk('div','strt');const nm=mk('span','strn');nm.textContent=tpl.name;const edit=mk('button','smbtn');edit.textContent='編集';edit.onclick=()=>{document.getElementById('tpl-name-input').value=tpl.name;draft=[...tpl.items];renderDraft();showTab('template');};const del=mk('button','dbtn');del.setAttribute('aria-label','削除');del.innerHTML='<i class="ti ti-trash"></i>';del.onclick=()=>{tpls.splice(i,1);saveAll();renderSaved();updateSelect();};top.append(nm,edit,del);const items=mk('div','stri');items.textContent=tpl.items.join('・');row.append(top,items);el.appendChild(row);});
+}
+document.getElementById('prev-btn').onclick=()=>{vM--;if(vM<0){vM=11;vY--;}renderCalendar();};
+document.getElementById('next-btn').onclick=()=>{vM++;if(vM>11){vM=0;vY++;}renderCalendar();};
+document.getElementById('today-btn').onclick=()=>{vY=now.getFullYear();vM=now.getMonth();renderCalendar();};
+document.getElementById('day-ov').onclick=function(e){if(e.target===this)closeModal();};
+document.getElementById('help-ov').onclick=function(e){if(e.target===this)closeHelp();};
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+}
+
+function startLoader(){
+  loadAll();
+  const pages=document.querySelectorAll('.page');
+  const msgs=['ページをめくっています...','予定を読み込み中...','肉球スタンプを準備中...','もうすぐ完成ニャ...'];
+  let i=0;const sub=document.getElementById('lsub');
+  function flip(){
+    if(i>=pages.length){sub.textContent='準備完了ニャ！';setTimeout(()=>{document.getElementById('loader').style.display='none';const app=document.getElementById('main-app');app.style.display='block';app.style.opacity='0';applyTheme(theme);renderCalendar();renderChecklist();updateSelect();showTab('checklist');initPwaBtn();let op=0;const fade=setInterval(()=>{op+=0.1;app.style.opacity=Math.min(op,1);if(op>=1)clearInterval(fade);},30);},400);return;}
+    const pg=pages[pages.length-1-i];sub.textContent=msgs[Math.min(i,msgs.length-1)];
+    pg.style.transition='transform 0.42s cubic-bezier(.4,0,.2,1)';pg.style.transform='rotateY(-160deg) translateX(-20px)';pg.style.opacity='0';
+    i++;setTimeout(flip,460);
+  }
+  setTimeout(flip,400);
+}
+startLoader();
+</script>
+</body>
+</html>
