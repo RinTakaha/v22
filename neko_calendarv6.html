@@ -255,38 +255,44 @@ body{font-family:var(--font-sans);background:var(--color-background-tertiary);co
   </div>
 
   <div class="panel" id="panel-notif">
-    <div class="cbox">
+    <div class="cbox" id="notif-support-box">
       <div class="cbox-t"><i class="ti ti-bell" style="font-size:14px;vertical-align:-1px"></i> 通知設定</div>
-      <div class="notif-row">
-        <div>
-          <div class="notif-label">通知を許可する</div>
-          <div class="notif-sub" id="notif-permission-sub">ブラウザの通知許可が必要です</div>
-        </div>
-        <button class="toggle" id="notif-toggle" onclick="toggleNotif()"><div class="toggle-knob"></div></button>
+      <div id="notif-unsupported-msg" style="display:none;font-size:13px;color:var(--color-text-secondary);line-height:1.7;padding:8px 0;">
+        このブラウザは通知に対応していません。<br>
+        iPhoneの場合はSafariで開いて<strong>ホーム画面に追加</strong>してから、アプリとして起動すると通知が使えます。
       </div>
-      <div class="notif-row">
-        <div>
-          <div class="notif-label">通知時刻</div>
-          <div class="notif-sub">アプリを開いている間に通知します</div>
+      <div id="notif-settings">
+        <div class="notif-row">
+          <div>
+            <div class="notif-label">通知を許可する</div>
+            <div class="notif-sub" id="notif-permission-sub">ブラウザの通知許可が必要です</div>
+          </div>
+          <button class="toggle" id="notif-toggle" onclick="toggleNotif()"><div class="toggle-knob"></div></button>
         </div>
-        <input type="time" class="time-input" id="notif-time" value="07:00" onchange="saveNotifSettings()">
-      </div>
-      <div class="notif-row">
-        <div>
-          <div class="notif-label">今日の予定が未入力</div>
-          <div class="notif-sub">予定が何も書かれていない日に通知</div>
+        <div class="notif-row">
+          <div>
+            <div class="notif-label">通知時刻</div>
+            <div class="notif-sub">アプリを開いている間に通知します</div>
+          </div>
+          <input type="time" class="time-input" id="notif-time" value="07:00" onchange="saveNotifSettings()">
         </div>
-        <button class="toggle on" id="toggle-noevent" onclick="toggleOption(this)"><div class="toggle-knob"></div></button>
-      </div>
-      <div class="notif-row">
-        <div>
-          <div class="notif-label">持ち物リストが未チェック</div>
-          <div class="notif-sub">チェックされていないアイテムがある日に通知</div>
+        <div class="notif-row">
+          <div>
+            <div class="notif-label">今日の予定が未入力</div>
+            <div class="notif-sub">予定が何も書かれていない日に通知</div>
+          </div>
+          <button class="toggle on" id="toggle-noevent" onclick="toggleOption(this)"><div class="toggle-knob"></div></button>
         </div>
-        <button class="toggle on" id="toggle-unchecked" onclick="toggleOption(this)"><div class="toggle-knob"></div></button>
+        <div class="notif-row">
+          <div>
+            <div class="notif-label">持ち物リストが未チェック</div>
+            <div class="notif-sub">チェックされていないアイテムがある日に通知</div>
+          </div>
+          <button class="toggle on" id="toggle-unchecked" onclick="toggleOption(this)"><div class="toggle-knob"></div></button>
+        </div>
       </div>
     </div>
-    <div class="cbox">
+    <div class="cbox" id="notif-test-box">
       <div class="cbox-t"><i class="ti ti-device-mobile" style="font-size:14px;vertical-align:-1px"></i> テスト通知</div>
       <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;line-height:1.6;">通知が届くか確認できます。許可した後にお試しください。</div>
       <button onclick="testNotif()" style="width:100%;padding:10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;cursor:pointer;font-size:14px;color:var(--color-text-primary);touch-action:manipulation;">
@@ -369,6 +375,7 @@ function loadAll(){
   if(notifEnabled)document.getElementById('notif-toggle').classList.add('on');
   if(!notifNoEvent)document.getElementById('toggle-noevent').classList.remove('on');
   if(!notifUnchecked)document.getElementById('toggle-unchecked').classList.remove('on');
+  checkNotifSupport();
   if(typeof Notification!=='undefined'&&Notification.permission==='granted')document.getElementById('notif-permission-sub').textContent='通知が許可されています';
 }
 function saveAll(){ls('nkc6_cal',calData);ls('nkc6_checks',checks);ls('nkc6_tpls',tpls);ls('nkc6_etpls',etpls);ls('nkc6_theme',theme);ls('nkc6_notif_on',notifEnabled);ls('nkc6_notif_time',notifTime);ls('nkc6_notif_noevent',notifNoEvent);ls('nkc6_notif_unchecked',notifUnchecked);}
@@ -466,6 +473,16 @@ function setupNotifTimer(){
       if(msgs.length&&typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification('🐱 にゃんこカレンダー',{body:msgs.join('・'),icon:'./icon-192.png'});
     }
   },5000);
+}
+function checkNotifSupport(){
+  if(typeof Notification==='undefined'){
+    const msg=document.getElementById('notif-unsupported-msg');
+    const settings=document.getElementById('notif-settings');
+    const testBox=document.getElementById('notif-test-box');
+    if(msg)msg.style.display='block';
+    if(settings)settings.style.display='none';
+    if(testBox)testBox.style.display='none';
+  }
 }
 function toggleNotif(){
   if(!('Notification' in window)){document.getElementById('notif-permission-sub').textContent='このブラウザは通知非対応です（iPhoneはPWA化後に対応）';return;}
