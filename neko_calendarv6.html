@@ -369,7 +369,7 @@ function loadAll(){
   if(notifEnabled)document.getElementById('notif-toggle').classList.add('on');
   if(!notifNoEvent)document.getElementById('toggle-noevent').classList.remove('on');
   if(!notifUnchecked)document.getElementById('toggle-unchecked').classList.remove('on');
-  if(Notification.permission==='granted')document.getElementById('notif-permission-sub').textContent='通知が許可されています';
+  if(typeof Notification!=='undefined'&&Notification.permission==='granted')document.getElementById('notif-permission-sub').textContent='通知が許可されています';
 }
 function saveAll(){ls('nkc6_cal',calData);ls('nkc6_checks',checks);ls('nkc6_tpls',tpls);ls('nkc6_etpls',etpls);ls('nkc6_theme',theme);ls('nkc6_notif_on',notifEnabled);ls('nkc6_notif_time',notifTime);ls('nkc6_notif_noevent',notifNoEvent);ls('nkc6_notif_unchecked',notifUnchecked);}
 
@@ -463,13 +463,13 @@ function setupNotifTimer(){
       const msgs=[];
       if(notifNoEvent&&!dd.note)msgs.push('今日の予定が未入力ニャ');
       if(notifUnchecked&&unchecked>0)msgs.push('持ち物'+unchecked+'件が未チェックニャ');
-      if(msgs.length&&Notification.permission==='granted')new Notification('🐱 にゃんこカレンダー',{body:msgs.join('・'),icon:'./icon-192.png'});
+      if(msgs.length&&typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification('🐱 にゃんこカレンダー',{body:msgs.join('・'),icon:'./icon-192.png'});
     }
   },5000);
 }
 function toggleNotif(){
+  if(!('Notification' in window)){document.getElementById('notif-permission-sub').textContent='このブラウザは通知非対応です（iPhoneはPWA化後に対応）';return;}
   if(!notifEnabled){
-    if(!('Notification' in window)){document.getElementById('notif-permission-sub').textContent='このブラウザは通知非対応です';return;}
     Notification.requestPermission().then(p=>{
       if(p==='granted'){notifEnabled=true;document.getElementById('notif-toggle').classList.add('on');document.getElementById('notif-permission-sub').textContent='通知が許可されています';setupNotifTimer();saveAll();}
       else{document.getElementById('notif-permission-sub').textContent='通知が拒否されました。ブラウザ設定から許可してください';}
@@ -481,7 +481,7 @@ function toggleNotif(){
 }
 function toggleOption(btn){btn.classList.toggle('on');if(btn.id==='toggle-noevent')notifNoEvent=btn.classList.contains('on');else notifUnchecked=btn.classList.contains('on');saveAll();}
 function saveNotifSettings(){notifTime=document.getElementById('notif-time').value;saveAll();setupNotifTimer();}
-function testNotif(){if(Notification.permission==='granted'){new Notification('🐱 にゃんこカレンダー テスト',{body:'通知のテストニャ！ちゃんと届いたニャ？',icon:'./icon-192.png'});}else{alert('まず通知をONにしてください');}}
+function testNotif(){if(typeof Notification!=='undefined'&&Notification.permission==='granted'){new Notification('🐱 にゃんこカレンダー テスト',{body:'通知のテストニャ！ちゃんと届いたニャ？',icon:'./icon-192.png'});}else{alert('まず通知をONにしてください');}}
 
 function renderEtplChips(){
   const el=document.getElementById('etpl-chips');el.innerHTML='';
@@ -540,26 +540,12 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 
 function startLoader(){
   loadAll();
-  const pages=document.querySelectorAll('.page');
-  const msgs=['ページをめくっています...','予定を読み込み中...','通知システム準備中...','もうすぐ完成ニャ...'];
-  let i=0;const sub=document.getElementById('lsub');
-  function flip(){
-    if(i>=pages.length){
-      sub.textContent='準備完了ニャ！';
-      setTimeout(()=>{
-        document.getElementById('loader').style.display='none';
-        const app=document.getElementById('main-app');app.style.display='block';app.style.opacity='0';
-        applyTheme(theme);renderCalendar();renderChecklist();updateSelect();showTab('checklist');
-        initPwaBtn();setupNotifTimer();
-        setTimeout(checkTodayStatus,800);
-        let op=0;const fade=setInterval(()=>{op+=0.1;app.style.opacity=Math.min(op,1);if(op>=1)clearInterval(fade);},30);
-      },400);return;
-    }
-    const pg=pages[pages.length-1-i];sub.textContent=msgs[Math.min(i,msgs.length-1)];
-    pg.style.transition='transform 0.42s cubic-bezier(.4,0,.2,1)';pg.style.transform='rotateY(-160deg) translateX(-20px)';pg.style.opacity='0';
-    i++;setTimeout(flip,460);
-  }
-  setTimeout(flip,400);
+  document.getElementById('loader').style.display='none';
+  const app=document.getElementById('main-app');
+  app.style.display='block';
+  applyTheme(theme);renderCalendar();renderChecklist();updateSelect();showTab('checklist');
+  initPwaBtn();setupNotifTimer();
+  setTimeout(checkTodayStatus,800);
 }
 startLoader();
 </script>
