@@ -1,6 +1,7 @@
-const CACHE = 'neko-cal-v5';
+const CACHE = 'neko-cal-v6';
 const ASSETS = [
   './neko_calendarv5.html',
+  './neko_calendarv6.html',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css'
 ];
