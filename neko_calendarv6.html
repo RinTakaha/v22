@@ -258,8 +258,7 @@ body{font-family:var(--font-sans);background:var(--color-background-tertiary);co
     <div class="cbox" id="notif-support-box">
       <div class="cbox-t"><i class="ti ti-bell" style="font-size:14px;vertical-align:-1px"></i> 通知設定</div>
       <div id="notif-unsupported-msg" style="display:none;font-size:13px;color:var(--color-text-secondary);line-height:1.7;padding:8px 0;">
-        このブラウザは通知に対応していません。<br>
-        iPhoneの場合はSafariで開いて<strong>ホーム画面に追加</strong>してから、アプリとして起動すると通知が使えます。
+        iPhoneの場合はSafariで開いて<strong>ホーム画面に追加</strong>してから起動すると通知が使えます（iOS16.4以上）。
       </div>
       <div id="notif-settings">
         <div class="notif-row">
@@ -475,13 +474,18 @@ function setupNotifTimer(){
   },5000);
 }
 function checkNotifSupport(){
-  if(typeof Notification==='undefined'){
-    const msg=document.getElementById('notif-unsupported-msg');
-    const settings=document.getElementById('notif-settings');
-    const testBox=document.getElementById('notif-test-box');
-    if(msg)msg.style.display='block';
-    if(settings)settings.style.display='none';
-    if(testBox)testBox.style.display='none';
+  const sub=document.getElementById('notif-permission-sub');
+  if(!sub)return;
+  try{
+    if(typeof Notification==='undefined'){
+      sub.textContent='通知はホーム画面に追加後に使えます（iOS16.4+）';
+    } else if(Notification.permission==='granted'){
+      sub.textContent='通知が許可されています';
+    } else if(Notification.permission==='denied'){
+      sub.textContent='通知が拒否されています。設定から許可してください';
+    }
+  }catch(e){
+    sub.textContent='通知はホーム画面に追加後に使えます（iOS16.4+）';
   }
 }
 function toggleNotif(){
